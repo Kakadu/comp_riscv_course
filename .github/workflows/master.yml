@@ -12,7 +12,7 @@ jobs:
 
       #- run: make debs
       - run: sudo apt install python3-sphinx-rtd-theme python3-sphinx-autobuild --yes
-      - run: make all
+      - run: make
 
       - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

@@ -1,5 +1,7 @@
-.PHONY: all debs watch
+.PHONY: all debs watch clean
+
 BUILD_DIR=_build
+DEFAULT := all
 
 all:
 	sphinx-build . $(BUILD_DIR)
