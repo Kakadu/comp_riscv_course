@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
 
-      - run: make debs
+      #- run: make debs
+      - run: sudo apt install python3-sphinx-rtd-theme python3-sphinx-autobuild --yes
       - run: make all
 
       - name: Publish to GitHub Pages
