@@ -14,6 +14,7 @@ jobs:
 
       - run: make debs
       #- run: sudo apt install python3-sphinx-rtd-theme python3-sphinx-autobuild --yes
+      - run: pip3 install docxbuilder --user
       - run: make
 
       - name: Publish to GitHub Pages
