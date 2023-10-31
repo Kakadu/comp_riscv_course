@@ -9,9 +9,11 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      #- run: make debs
-      - run: sudo apt install python3-sphinx-rtd-theme python3-sphinx-autobuild --yes
+      - run: make debs
+      #- run: sudo apt install python3-sphinx-rtd-theme python3-sphinx-autobuild --yes
       - run: make
 
       - name: Publish to GitHub Pages
