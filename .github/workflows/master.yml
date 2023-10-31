@@ -20,7 +20,8 @@ jobs:
       - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          personal_token: ${{ secrets.PERSONAL_TOKEN }} 
+          # https://github.com/peaceiris/actions-gh-pages#%EF%B8%8F-set-personal-access-token-personal_token
           publish_dir: _build
           external_repository: Kakadu/kakadu.github.io
           publish_branch: master
