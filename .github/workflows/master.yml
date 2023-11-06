@@ -26,3 +26,4 @@ jobs:
           external_repository: Kakadu/kakadu.github.io
           publish_branch: master
           destination_dir: riscv-course-2023
+          enable_jekyll: true
