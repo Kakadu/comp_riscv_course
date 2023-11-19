@@ -1,325 +1,312 @@
-Welcome to OCanren's documentation!
-===================================
+Выбор инструкций в компиляторах
+*******************************
 
-.. toctree::
-   :maxdepth: 1
+В данном тексте мы уделим внимание финальной части компилятора, которая занимается выбором инструкций целевой архитекутры (англ. instruction selectopm), их переупорядочиванием (instruction scheduling) и распределению регистров (англ. register allocation). 
 
-OCanren is a strongly-typed embedding of `miniKanren <http://minikanren.org>`_ relational
-programming language into `OCaml <http://ocaml.org>`_. Nowadays, implementation of
-OCanren strongly reminds `faster-miniKanren <https://github.com/michaelballantyne/faster-miniKanren>`_.
-Previous implementation was based on
-`microKanren <http://webyrd.net/scheme-2013/papers/HemannMuKanren2013.pdf>`_
-with `disequality constraints <http://scheme2011.ucombinator.org/papers/Alvis2011.pdf>`_.
 
 
-OCanren vs. miniKanren
-----------------------
+Instrucion selection
 
-The syntax between OCanren and vanilla miniKanren is a little bit different:  :ref:`ocanren-vs-miniKanren`.
-The correspondence between original miniKanren and OCanren constructs is shown below:
 
+Раскрытие макросов (Macro Expansion)
+====================================
 
+Раскрытие маркосов исторически является первым и достаточно простым подходом к порождению инструкций. Зачастую реализация разделяется на две части: непосредственно макросы-шаблоны и процедура, которая применяет эти макросы к коду (macro expander). За счет этого разделения первая часть может быть специализирована под различные архитектуры, в то врeмя как вторая может быть написана один раз для всех архитектур.
 
-Injecting and Projecting User-Type Data
----------------------------------------
+.. TODO::
 
-To make it possible to work with OCanren, user-type data have to be *injected* into
-logic domain. In the simplest case (non-parametric, non-recursive) the function
+    Сказать при чем тут RISCV
 
-.. code-block:: ocaml
 
-   val inj  : ('a, 'b) injected -> ('a, 'b logic) injected
-   val lift : 'a ->  ('a, 'a) injected
+template (macro) vs expand procedure (macro expander). Первое может быть специализировано для конкретной архитектуры, второй может быть один на всех.
 
-can be used for this purpose:
+Преимущества: просто и прямолинейно.
 
-.. code-block:: ocaml
+.. code-block:: none
+    :caption: CAPTION_TEXT
+    :emphasize-lines: 0
 
-   inj @@ lift 1
+    expand ($3 <- $1 + $2) {
+        r1 = getRegOf ($1);
+        r2 = getRegOf ($2);
+        r3 = mkNewReg ($3);
+        print "add " + r3 + ", " + r1 + ", " + r2;
+    }
 
-.. code-block:: ocaml
 
-   inj @@ lift true
+.. TODO::
 
-.. code-block:: ocaml
+    Пример для RISCV
 
-   inj @@ lift "abc"
+.. important::
 
+        asdf
 
-.. raw:: html
+Наивное раскрытие макросов
+--------------------------
 
-   <!--
-   If the type is parametric (but non-recursive), then (as a rule) all its type parameters
-   have to be injected as well:
+Одной из первых работ по порождению кода с помощью маркосов является SIMCMP (SIMple CoMPiler) :cite:`Orgass1969ABF` . Другой пример -- GCL :cite:`Elson1970`
 
-   ```ocaml
-   !! (gmap(option) (!!) (Some x))
-   ```
 
-   ```ocaml
-   !! (gmap(pair) (!!) (!!) (x, y))
-   ```
+    //https://jterrace.github.io/sphinxtr/html/ch-figs/index.html#subfigures
 
-   Here `gmap(type)` is a type-indexed morphism for the type `type`; it can be written
-   by hands, or constructed using one of the existing generic programming
-   frameworks (the library itself uses [GT](https://github.com/dboulytchev/generic-transformers)).
-   -->
+.. subfigstart::
 
+.. _fig-cc-teddy-base:
 
+.. figure:: images/sel1.png
+    :alt: Base Mesh + 128x128 Texture (334 KB)
+    :width: 150
+    :align: center
+    
+    Дерево выражений
 
-If the type is a (possibly recursive) algebraic type definition, then, as a rule, it has to be
-abstracted from itself, and then we can write smart constructor for constructing
-injected values,
+.. _fig-cc-teddy-original:
 
-.. code-block:: ocaml
+.. code-block:: asm
+    :caption: Пример кода на RISCV
 
-   type tree = Leaf | Node of tree * tree
+    add t0, ra, rb
+    mulw t0, t0, 2
 
-is converted into
+.. subfigend::
+    :width: 0.30
+    :alt: Example Model Resolutions
+    :label: fig-cc-teddy
+    
+    Пример простого выражения и его схема компиляции для RISC-V
 
-.. code-block:: ocaml
+.. .. comment::
+..     Example of a teddy bear model at different resolutions of the
+..     progressive format (1 draw call) and its original format (16 draw
+..     calls). The size in KB assumes downloading progressively, |eg|
+..     :num:`fig-cc-teddy-100`'s size includes lower-resolution textures.
 
-   module T = struct
-     type 'self tree = Leaf | Node of 'self * 'self
 
-     let fmap f = function
-     | Leaf -> Leaf
-     | Node (l, r) -> Node (f l, f r)
-   end
-   include T
-   module F =  Fmap2(T)
-   include F
+Промежуточные предстваления вместо дереьев абстрактного синтаксиса
+------------------------------------------------------------------
 
-   let leaf    ()  = inj @@ distrib @@ T.Leaf
-   let node   b c  = inj @@ distrib @@ T.Node (b,c)
+Первые компиляторы занимались порождением кода непосредственно на основе кода на языке программирования.
+Это прямолинейный подход, который не может анализировать исходную программу в целом, а только по отдельным инструкциям.
+К тому же оно привязывает порождение кода (т.е. компилятор) к конкретному языку программирования.
 
-Using fully abstract type we can construct type of ``ground``
-(without logic values) trees and type of ``logic trees`` --
-the trees that can contain logic variables inside.
+Более удачным вариантом является порождение кода из деревьев абстрактного синтаксиса. В наши дни код порождается из специального представления программ, которое получается после совершения различных оптимизаций. Примерами таких представлений могут быть ANF, SSA и C--.
 
-Using this fully abstract type and a few OCanren builtins we can
-construct ``reification`` procedure which translates ``('a, 'b) injected``
-into it's right counterpart.
+.. TODO::
 
-.. code-block:: ocaml
+    Что-то написать
 
-   type gtree = gtree T.t
-   type ltree = ltree X.t logic
-   type ftree = (rtree, ltree) injected
 
-Using another function ``reify`` provided by the functor application we can
-translate ``(_, 'b) injected`` values to ``'b`` type.
+Порождение макросов из описания целевой машины
+----------------------------------------------
+
+Реалистичные компиляторы с какого-то момента времени должны начать поддерживать несколько целевых машин.
+Проблемы с рукописными макросами начинаются, если машины начинают существенно различаться между собой.
+Например, бывают разные классы регистров (ссылка), в которые можно класть только данные определенного вида, 
+или некоторые архитектуры могут не иметь подходящих команд, и для выполнения операции над данными из DRAM необходимо задействовать дополнительный регистр.
+
+.. table:: Доступ к 0му элементу массива в памяти для RISCV64 и AMD64
+
+ +-----------------------------------------------------+
+ | .. code-block:: c                                   |
+ |    :caption: Код на Си                              |
+ |                                                     |
+ |    x = *a;                                          |
+ |                                                     |
+ +-----------------------------------------------------+
+ | .. code-block:: asm                                 |
+ |    :caption: AMD64                                  |
+ |                                                     |
+ |    ; AMD64                                          |
+ |    mov rax, (sp)                                    |
+ |                                                     |
+ |    ; RISCV64                                        |
+ |    ldw t0, (sp)                                     |
+ |    mv a0, t0                                        |
+ +-----------------------------------------------------+
+
+В примере выше мы обращаемся к элементу в начале массива, массив находится на вершине стека. В архитекутре AMD64 мы можем сделать это непосредственно, в RISCV64 необходимо пользоваться промежуточным регистром. При генерации кода с помощью макросов приходится одновременно заниматься распределением регистров, что усложняется задачу порождения оптимального кода.
+
+
+Писать макросы руками сложно, хотелось бы иметь генератор, который по описанию машины порождает соответствующие макросы.
+Одна из первых попыток :cite:`Miller1971` сделать это была система Dmacs. 
+Она предлагала два проприетарных языка: первый (Machine-Independent Macro Language (MIML)) 
+определят 2-адресные команды, которые являлись представлением программы, а второй (Object Machine Macro Language (OMML)) декларативный язык использовался, чтобы преобразовывать MIML команды в ассемблерный код. 
 
-.. code-block:: ocaml
+.. code-block:: none
+    :caption: 
+        Представление арифметического выражения  A[I] = B + C[J] * D с помощью команд MIML. 
+        Команда SS используется, чтобы переслать данные между разными источниками. 
+        На аргументы ссылаются либо по имени, либо по номеру строки, где он использовался.
+    :emphasize-lines: 0
 
-   val reify_tree : ftree -> ltree
-   let rec reify_tree eta = F.reify LNat.reify reify_tree eta
+    1: SS C,J
+    2: IMUL 1,D
+    3: IADD 2,B
+    4: SS A,I
+    5: ASSG 4,3
+    
+.. code-block:: none
+    :caption: 
+        Часть описания компьютера IBM-360 на языке OMML :cite:`Miller1971`. 
+        Команда `rclass` описывает виды регистров, а `rpath` ---  разрешенные способы пересылки между видами регистров и памятью.
 
-And using this function we can run query and get lazy stream of reified logic
-answers
+    rclass REG:  r2, r3, r4, r5, r6
+    rclass FREG: fr0, fr2, fr4, fr6
+    ...
+    rpath WORD -> REG:    L  REG,WORD
+    rpath REG  -> WORD:  ST  REG,WORD
+    rpath FREG -> WORD:  LE FREG,WORD
+    rpath WORD -> FREG: STE FREG,WORD
+    ...
+    ISUB s1 ,s2
+    from REG(s1),REG(s2) emit SR s1 ,s2
+    from REG(s1),WORD(s2) emit S s1 ,s2
+    resultresultREG(s1)
+    REG(s2)
+    FMUL m1 ,m2 ( commutative )
+    from FREG(m1),FREG(m2) emit MER m1 ,m2
+    from FREG(m1),WORD(m2) emit ME m1 ,m2
+    resultresultFREG(m1)
+    FREG(m1)
 
-.. code-block:: ocaml
 
-   let _: Tree.ltree OCanren.Stream.t =
-     run q (fun q  -> q === leaf ())
-           (fun qs -> qs#reify Tree.reify_tree)
+.. todo:: 
 
+    Дать определеня много-адресным кодам.
 
-.. raw:: html
+.. Раздел про further improvements  из дисера надо бы выкинуть
 
-   <!--
-   Pragmatically speaking, it is desirable to make a type fully abstract, thus
-   logic variables can be placed in arbitrary position, for example,
 
-   ```ocaml
-   type ('a, 'b, 'self) tree = Leaf of 'a | Node of 'b * 'self * 'self
+Покрытие деревьев
+=================
 
-   let rec inj_tree t = !! (gmap(tree) (!!) (!!) inj_tree t)
 
-   ```
+.. subfigstart::
 
-   instead of
+.. _fig-tree-covering-0:
 
-   ```ocaml
-   type tree = Leaf of int | Node of string * t * t
-   ```
+.. code-block:: c
+    :caption: Пример кода на RISCV
 
+    x = A[i + 1];
 
+.. _fig-tree-covering-1:
 
-   Symmetrically, there is a projection function `prj` (and a prefix
-   synonym `!?`), which can be used to project logical values into
-   regular ones. Note, that this function is partial, and can
-   raise `Not_a_value` exception. There is failure-continuation-passing
-   version of `prj`, which can be used to react on this situation. See
-   autogenerated documentation for details.
-   -->
+.. code-block:: text
+    :caption: Пример кода на RISCV
 
+    mv r <- var
+    add r <- s + t
+    mul r <- s × t
+    muladd r <- s × t + u
+    load r <- ∗s
+    maload r <- ∗(s × t + u)
 
+.. _fig-tree-covering-2:
 
-Bool, Nat, List
----------------
+.. figure:: images/sel2covering.png
+    :alt: Base Mesh + 128x128 Texture (334 KB)
+    :width: 200
+    :align: center
+    
+    Дерево выражений
 
-There is some built-in support for a few basic types --- booleans, natural
-numbers in Peano form, logical lists. See corresponding modules.
 
-The following table summarizes the correspondence between some expressions
-on regular lists and their OCanren counterparts:
+.. subfigend::
+    :width: 0.30
+    :alt: Example Model Resolutions
+    :label: fig-cc-teddy
+    
+    Пример простого выражения и его схема компиляции для RISC-V
 
-.. list-table::
-   :header-rows: 1
 
-   * - Regular lists
-     - OCanren
-   * - ``[]``
-     - ``nil``
-   * - ``[x]``
-     - ``!< x``
-   * - ``[x; y]``
-     - ``x %< y``
-   * - ``[x; y; z]``
-     - ``x % (y %< z)``
-   * - ``x::y::z::tl``
-     - ``x % (y % (z % tl))``
-   * - ``x::xs``
-     - ``x % xs``
 
+Ограничения покрытия деревьев.
 
-Syntax Extensions
------------------
+Основным недостатком работы с деревьями выражений является то, что одинаковые подвыражения должны быть разделены по рёбрам и продублированы при построении дерева.
+Такие преобразования известны в литературе как edge splitting и node duplication.
+В зависимости от набора инструкций, не разделяя подвыражения можно добивать лучшего качества кода.
 
-There are two constructs, implemented as syntax extensions: ``fresh`` and ``defer``. The latter
-is used to eta-expand enclosed goal ("inverse-eta delay").
+В примере ниже общее выражение для вычисления значения t было разделено, что приводит к покрытию m1,...m7,m9 со стоимостью 0+...+0+2+3+5=10.
+Если представить дерево как граф без циклов, то его можно покрывать шаблонами m8 и m10, что даст стоимость 0+...+0+4+5=9.
 
-However, neither of them actually needed. Instead of ``defer (g)`` manual expansion can
-be used:
 
-.. code-block:: ocaml
 
-   delay (fun () -> g)
+.. subfigstart::
 
-To get rid of ``fresh`` one can use ``Fresh`` module, which introduces variadic function
-support by means of a few predefined numerals and a successor function. For
-example, instead of
+.. _fig-dag-covering-0:
 
-.. code-block:: ocaml
+.. code-block:: c
+    :caption: Пример кода на Си
 
-   fresh (x y z) g
+    t = a + b;
+    x = c * t;
+    y = *(( int *) t);
 
-one can write
+.. _fig-dag-covering-1:
 
-.. code-block:: ocaml
+.. table:: Инструкции. Нотация `*s` означает получения данных по адресу в памяти.
 
-   Fresh.three (fun x y z -> g)
+    +--------------------------------+------------+
+    + Инструкция                     + Стоимость  +
+    +--------------------------------+------------+
+    + add r <- s + t                 + 2          +
+    +--------------------------------+------------+
+    + mul r <- s × t                 + 3          +
+    +--------------------------------+------------+
+    + addmul r <- (s + t) × u        + 4          +
+    +--------------------------------+------------+
+    + load r <- * s                  + 5          +
+    +--------------------------------+------------+
+    + addload r <- * (s + t)         + 5          +
+    +--------------------------------+------------+
 
-or even
+.. _fig-dag-covering-3:
 
-.. code-block:: ocaml
+.. figure:: images/sel2dag0.png
+    :width: 400
+    :align: center
+    
+    Expression trees after edge splitting.
 
-   (Fresh.succ Fresh.two) (fun x y z -> g)
+.. _fig-dag-covering-4:
 
-Run
----
+.. figure:: images/sel2dag1.png
+    :alt: Base Mesh + 128x128 Texture (334 KB)
+    :width: 300
+    :align: center
+    
+    Дерево выражений
 
-The top-level primitive in OCanren is ``run``, which can be used in the following
-pattern:
 
-.. code-block:: ocaml
+.. subfigend::
+    :width: 0.30
+    :alt: Example Model Resolutions
+    :label: fig-tree-covering-bad
+    
+    Пример простого выражения и его схема компиляции для RISC-V
 
-   run n (fun q1 q2 ... qn -> g) (fun a1 a2 ... an -> h)
 
-Here ``n`` stands for *numeral* (some value, describing the number of arguments,
-``q1``\ , ``q2``\ , ..., ``qn`` --- free logic variables, ``a1``, ``a2``, ..., ``an`` --- streams
-of answers for ``q1``, ``q2``, ..., ``qn`` respectively, ``g`` --- some goal, ``h`` --- a
-*handler* (some piece of code, presumable making use of ``a1``, ``a2``, ..., ``an``).
 
-There are a few predefined numerals (``q``, ``qr``, ``qrs``, ``qrst`` etc.) and a
-successor function, ``succ``, which can be used to "manufacture" greater
-numerals from smaller ones.
+Покрытие DAG
+============
 
-Sample
-------
+Прочее
+======
 
-We consider here a complete example of OCanren specification (relational
-binary search tree):
+Instruction scheduling
 
-.. code-block:: ocaml
+Курс `cornell_cs4120`_ говорит, что оно не нужно, потому что процессор сам.
 
-   open Printf
-   open GT
-   open OCanren
-   open OCanren.Std
+Difference between 3 address code and ANF
 
-   module Tree = struct
-     module X = struct
-       (* Abstracted type for the tree *)
-       @type ('a, 'self) t = Leaf | Node of 'a * 'self * 'self with gmap,show;;
-       let fmap eta = GT.gmap t eta
-     end
-     include X
-     include Fmap2(X)
 
-     @type inttree = (int, inttree) X.t with show
-     (* A shortcut for "ground" tree we're going to work with in "functional" code *)
-     @type rtree = (LNat.ground, rtree) X.t with show
+.. _специальности: https://se.math.spbu.ru/bachelor/software-engineering.html
+.. _курсом Д. Булычева: https://compscicenter.ru/courses/compilers/2021-spring
+.. _сдают в репозитории на GitHub: https://github.com/Kakadu/comp23hw
+.. _материалы: https://disk.yandex.ru/d/k9p_q6Y3jEm-Rg
+.. _cornell_cs4120: https://www.cs.cornell.edu/courses/cs4120/2023sp/notes.html
 
-     (* Logic counterpart *)
-     @type ltree = (LNat.logic, ltree) X.t logic with show
-
-     type ftree = (rtree, ltree) injected
-
-     let leaf    () : ftree = inj @@ distrib @@ X.Leaf
-     let node a b c : ftree = inj @@ distrib @@ X.Node (a,b,c)
-
-     (* Injection *)
-     let rec inj_tree : inttree -> ftree = fun tree ->
-        inj @@ distrib @@ GT.(gmap t nat inj_tree tree)
-
-     (* Projection *)
-     let rec prj_tree : rtree -> inttree =
-       fun x -> GT.(gmap t) LNat.to_int prj_tree x
-
-   end
-
-   open Tree
-
-   (* Relational insert into a search tree *)
-   let rec inserto a t' t'' = conde [
-     (t' === leaf ()) &&& (t'' === node a (leaf ()) (leaf ()) );
-     fresh (x l r l')
-       (t' === node x l r)
-       Nat.(conde [
-         (t'' === t') &&& (a === x);
-         (t'' === (node x l' r  )) &&& (a < x) &&& (inserto a l l');
-         (t'' === (node x l  l' )) &&& (a > x) &&& (inserto a r l')
-       ])
-   ]
-
-   (* Top-level wrapper for insertion --- takes and returns non-logic data *)
-   let insert : int -> inttree -> inttree = fun a t ->
-     prj_tree @@ RStream.hd @@
-     run q (fun q  -> inserto (nat a) (inj_tree t) q)
-           (fun qs -> qs#prj)
-
-   (* Top-level wrapper for "inverse" insertion --- returns an integer, which
-      has to be inserted to convert t into t' *)
-   let insert' t t' =
-     LNat.to_int @@ RStream.hd @@
-     run q (fun q  -> inserto q (inj_tree t) (inj_tree t'))
-           (fun qs -> qs#prj)
-
-   (* Entry point *)
-   let _ =
-     let insert_list l =
-       let rec inner t = function
-       | []    -> t
-       | x::xs ->
-         let t' = insert x t in
-         printf "Inserting %d into %s makes %s\n%!" x (show_inttree t) (show_inttree t');
-         inner t' xs
-       in
-       inner Leaf l
-     in
-     ignore @@ insert_list [1; 2; 3; 4];
-     let t  = insert_list [3; 2; 4; 1] in
-     let t' = insert 8 t in
-     Printf.printf "Inverse insert: %d\n" @@ insert' t t'
+.. bibliography::
+   :all:

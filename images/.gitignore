@@ -1,0 +1,9 @@
+sel1.png
+sel2covering.png
+sel2dag0.png
+sel2dag1.png
+
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+
