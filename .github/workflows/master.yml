@@ -14,8 +14,12 @@ jobs:
 
       - run: make debs
       #- run: sudo apt install python3-sphinx-rtd-theme python3-sphinx-autobuild --yes
-      - run: pip3 install docxbuilder --user
-      - run: make
+      - run: >
+          python3 -m venv .
+          make debs
+      - run: >
+          python3 -m venv .
+          make
 
       - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
