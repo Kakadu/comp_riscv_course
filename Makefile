@@ -7,11 +7,10 @@ all: bin
 	bin/sphinx-build . $(BUILD_DIR)
 
 debs:
-	sudo apt install --yes \
-		python3-pip
+	sudo apt install --yes python3-pip
 	pip3 install \
-		sphinxcontrib_bibtex docxbuilder sphinx_bootstrap_theme sphinx_rtd_theme sphinx_autobuild
-	
+		sphinxcontrib_bibtex docxbuilder sphinx_bootstrap_theme sphinx_rtd_theme sphinx_autobuild sphinx_subfigure
+
 watch: bin
 	bin/sphinx-autobuild . $(BUILD_DIR) --port 8008
 

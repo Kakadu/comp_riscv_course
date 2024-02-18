@@ -1,0 +1,140 @@
+% !TEX TS-program = xelatex
+% !TeX spellcheck = ru_RU
+% !TEX root = ssa_graph1.tex
+\documentclass[tikz,border=3.14mm]{standalone}
+
+\pgfdeclarelayer{background}
+\pgfsetlayers{background,main}
+
+\usepackage{tikz, amssymb, comment}
+\usetikzlibrary {graphs,shapes.geometric}
+\usetikzlibrary{positioning}
+
+\def\mynode#1#2 {
+      \node[box] (b#1) {#2};
+      \node [right,inner xsep=.5em
+          , outer sep=0pt,text height=1ex,text depth=.0ex] (caption#1)
+                   at ([shift={(-1em,0pt)}]b#1.north west) {#1};
+}
+\begin{document}
+
+%\begin{comment}
+\newcommand\mytikzcontents{
+    \node[leaf] at ( 0, 0) (M1) {$n_1$};
+    \node[leaf] at ( 1,-1) (M2) {$\varphi$};
+    \node[leaf] at ( 0,-2) (M3) {$\leqslant$};
+    \node[leaf] at (-1,-1) (M4) {$1$};
+    \node[leaf] at ( 2,-3) (M5) {$-$};
+    \node[leaf] at ( 3,-2) (M6) {$1$};
+    \node[leaf] at ( 5,-2.5) (M7) {$\times$};
+    \node[leaf] at ( 6,-1) (M8) {$\varphi$};
+    \node[leaf] at ( 5, 0) (M9) {$1$};
+    \node[leaf] at ( 7,-2) (M10) {$ret$};
+    \draw[->,thick] (M1) --  (M2);
+    \draw[->,thick] (M4) --  (M3);
+    \draw[->,thick] (M2) --  (M3);
+    \draw[->,thick] (M2) --  (M5);
+    \draw[->,thick] (M5) .. controls ++(1:-1) and ++(-90: 1)  ..  (M2);
+    \draw[->,thick] (M6) --  (M5);
+    \draw[->,thick] (M9) --  (M8);
+    \draw[->,thick] (M8) --  (M7);
+    %    \draw[->,thick] (M7.south) -- (8,-3) -- (8,-1) to (M8.east);
+    \draw[->,thick] (M7.east) to [bend right=90] (M8.south);
+    \draw[->,thick] (M2.east) -- (3.5,-1) to [out=0,in=135]  (M7);
+    \draw[->,thick] (M8) --  (M10);
+}
+\begin{tikzpicture}
+    [ every tree node/.style={draw,circle}
+    , sibling distance=25pt
+    , level distance=30pt
+    , leaf/.style={circle,fill=blue,fill opacity=0.3,text opacity=1}
+    , dot/.default = 6pt % size of the circle diameter
+    ]
+    \mytikzcontents
+\end{tikzpicture}
+
+\newcommand \mytikzcfgpart{
+    \node[draw] at (-3, 0)  (bE)   {\textbf{\texttt{entry}}};
+    \node[draw] at (-3, -1) (bH)   {\textbf{\texttt{head}}};
+    \node[draw] at (-3, -3) (bIf)  {\textbf{\texttt{if}}};
+    \node[draw] at (-4, -4) (bBody){\textbf{\texttt{body}}};
+    \node[draw] at (-2, -4) (bFin) {\textbf{\texttt{fin}}};
+    \draw[->, line width=.45mm] (bE) -- (bH);
+    \draw[->, line width=.45mm] (bH) -- (bIf);
+    \draw[->, line width=.45mm] (bIf) --  (bBody);
+    \draw[->, line width=.45mm] (bIf)-- (bFin);
+
+    \draw[->, line width=.45mm] (bBody) to [bend left =60] (bH);
+    \draw[thick, ->, dashed] (bFin)  to [bend right=20] (M10);
+    \draw[thick, ->, dashed] (bH)  to [bend left=40] (M8);
+    \draw[thick, ->, dashed] (bH)  to [bend left=20] (M2);
+    \draw[thick, ->]         (M3) to [bend left =20] (bIf);
+
+}
+\begin{tikzpicture}
+    [ every tree node/.style={draw,circle}
+    , sibling distance=25pt
+    , level distance=30pt
+    , leaf/.style={circle,fill=blue,fill opacity=0.3,text opacity=1}
+    , dot/.default = 6pt % size of the circle diameter
+    ]
+    \mytikzcontents;
+    \mytikzcfgpart
+\end{tikzpicture}
+
+%\end{comment}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand \UniDataFlow{
+    \node[draw] at ( 0.5, -1.5) (DFmaxL) {\texttt{MAX}};
+    \node[leaf, circle] at ( 1.2, -2.2) (DFless) {<};
+    \node[draw] at ( 2, -1.5) (DFd1)   {$d_1$};
+    \node[leaf, circle] at ( 2.8, -2.2) (DFphi) {$\varphi$};
+    \node[draw] at ( 3.6, -1.5) (DFmaxR) {\texttt{MAX}};
+    \node[draw] at ( 1.2, -3) (DFempty) {\phantom{$d_3$}};
+    \node[draw] at ( 2.8, -3) (DFd3) {$d_3$};
+    \node[draw, circle] at ( 2, -.5) (DFplus)   {$+$};
+    \node[draw] at ( 1.2, 0.2) (DFs)   {$s$};
+    \node[draw] at ( 2.8, 0.2) (DFt)   {$t$};
+
+    \draw[->] (DFs) --  (DFplus);
+    \draw[->] (DFt) --  (DFplus);
+    \draw[->] (DFplus) --  (DFd1);
+    \draw[->] (DFmaxL) --  (DFless);
+    \draw[->] (DFmaxR) --  (DFphi);
+    \draw[->] (DFd1) --  (DFless);
+    \draw[->] (DFd1) --  (DFphi);
+    \draw[->] (DFless) --  (DFempty);
+    \draw[->] (DFphi) --  (DFd3);
+}
+
+
+\newcommand \UniCFG{
+\node[draw] at (-3, 0.5)  (bE)   {\textbf{\texttt{entry}}};
+\node[draw, diamond] at (-3, -1)  (bCBR)   {\textbf{\texttt{c.br}}};
+\node[draw] at (-1, -1) (bClamp)   {\textbf{\texttt{clamp}}};
+\node[draw, diamond] at (-1, -2) (bBR)   {\textbf{\texttt{br}}};
+\node[draw] at (-1, -3) (bFin) {\textbf{\texttt{fin}}};
+\draw[->, line width=.45mm] (bE) -- (bCBR);
+\draw[->, line width=.45mm] (bCBR) -- (bClamp);
+\draw[->, line width=.45mm] (bClamp) --  (bBR);
+\draw[->, line width=.45mm] (bBR)-- (bFin);
+
+\draw[->, line width=.45mm] (bCBR) to [bend right=40] (bFin);
+\draw[->, dotted] (bE) to [bend left=30] (DFd1);
+\draw[->, dotted] (bFin) to [bend right=40] (DFd3);
+\draw[->]  (DFempty) -- (0,-3) -- (0,-.5) to (bCBR.north east);
+}
+\begin{tikzpicture}
+    [ every tree node/.style={draw,circle}
+    , sibling distance=25pt
+    , level distance=30pt
+    , leaf/.style={circle,fill=blue,fill opacity=0.3,text opacity=1}
+    , dot/.default = 6pt % size of the circle diameter
+    ]
+    \UniDataFlow
+    \UniCFG
+\end{tikzpicture}
+
+
+\end{document}

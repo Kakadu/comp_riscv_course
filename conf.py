@@ -38,7 +38,7 @@ extensions = [ 'sphinx.ext.todo'
   #, 'sphinx.ext.mathjax'
   , 'sphinx.ext.autosectionlabel'
   , 'docxbuilder'
-  
+
   ]
 
 autosectionlabel_prefix_document = True
@@ -148,24 +148,24 @@ bibtex_bibfiles = ['refs.bib']
 
 
 # Subfigures
-#extensions.insert(0, 'sphinx_subfigure')
+extensions.insert(0, 'sphinx_subfigure')
 extensions.insert(0, 'subfig')
-extensions.insert(0, 'numfig')
+#extensions.insert(0, 'numfig')
 
 # -- Options for Texinfo output -------------------------------------------
 
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
-texinfo_documents = [
-    (master_doc, 'OCanren', 'OCanren Documentation',
-     author, 'OCanren', 'One line description of project.',
-     'Miscellaneous'),
-]
+# texinfo_documents = [
+#     (master_doc, 'OCanren', 'OCanren Documentation',
+#      author, 'OCanren', 'One line description of project.',
+#      'Miscellaneous'),
+# ]
 
 #import sphinx_rtd_theme
-import sphinx_bootstrap_theme
 #html_theme = 'rtd'
+import sphinx_bootstrap_theme
 html_theme = 'bootstrap'
 #html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 
