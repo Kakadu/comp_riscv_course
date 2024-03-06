@@ -33,6 +33,6 @@ jobs:
           publish_dir: _build
           #external_repository: Kakadu/kakadu.github.io
           #publish_branch: master
-          destination_dir: riscv-course-2023
+          destination_dir: .
           publish_branch: gh-pages
           enable_jekyll: false
