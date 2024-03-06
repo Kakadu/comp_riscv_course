@@ -31,7 +31,8 @@ jobs:
           personal_token: ${{ secrets.PERSONAL_TOKEN }}
           # https://github.com/peaceiris/actions-gh-pages#%EF%B8%8F-set-personal-access-token-personal_token
           publish_dir: _build
-          external_repository: Kakadu/kakadu.github.io
-          publish_branch: master
+          #external_repository: Kakadu/kakadu.github.io
+          #publish_branch: master
           destination_dir: riscv-course-2023
-          enable_jekyll: true
+          publish_branch: gh-pages
+          enable_jekyll: false
