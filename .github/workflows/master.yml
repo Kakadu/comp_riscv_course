@@ -23,7 +23,7 @@ jobs:
           make debs
       - run: |
           source bin/activate
-          make
+          make all _build/comp_riscv.docx
 
       - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3.9.3

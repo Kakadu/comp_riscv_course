@@ -21,5 +21,8 @@ clean:
 	$(RM) -r $(BUILD_DIR)
 	$(MAKE) -C images clean
 
-$(BUILD_DIR)/sphinx.docx: bin
+$(BUILD_DIR)/sphinx.docx: bin index.rst
 	bin/sphinx-build -b docx . $(BUILD_DIR)
+
+$(BUILD_DIR)/comp_riscv.docx: $(BUILD_DIR)/sphinx.docx
+	cp $^ $@
