@@ -25,6 +25,8 @@ jobs:
           source bin/activate
           make all _build/comp_riscv.docx
 
+      - run: tree _build
+
       - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3.9.3
         with:
@@ -36,3 +38,4 @@ jobs:
           destination_dir: .
           publish_branch: gh-pages
           enable_jekyll: false
+
