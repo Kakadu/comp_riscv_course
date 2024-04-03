@@ -23,7 +23,7 @@ jobs:
           make debs
       - run: |
           source bin/activate
-          make all _build/comp_riscv.docx
+          make all _build/comp_riscv.docx _build/Course_description.docx
 
       - run: tree _build
 

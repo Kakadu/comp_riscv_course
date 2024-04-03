@@ -26,3 +26,6 @@ $(BUILD_DIR)/sphinx.docx: bin index.rst
 
 $(BUILD_DIR)/comp_riscv.docx: $(BUILD_DIR)/sphinx.docx
 	cp $^ $@
+
+$(BUILD_DIR)/Course_description.docx: Course_description.docx
+	cp $^ $@
