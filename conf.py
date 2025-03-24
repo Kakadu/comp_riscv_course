@@ -168,6 +168,8 @@ extensions.insert(0, 'subfig')
 #html_theme = 'rtd'
 import sphinx_bootstrap_theme
 html_theme = 'bootstrap'
+import sphinx_book_theme
+html_theme = 'classic'
 #html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 
 html_context = {
@@ -177,3 +179,12 @@ html_context = {
     'github_version': 'master',
     'conf_py_path': '/',
 }
+# html_theme_options = {
+
+#     # Toc options
+#     'collapse_navigation': True,
+#     'sticky_navigation': True,
+#     'navigation_depth': 4,
+#     'includehidden': True,
+#     'titles_only': False
+# }
