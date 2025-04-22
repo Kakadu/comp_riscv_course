@@ -4,17 +4,14 @@ BUILD_DIR = _build
 DEFAULT := all
 
 
-all: venv venv/bin/sphinx-build
-	venv/bin/sphinx-build . $(BUILD_DIR)
+all: bin bin/sphinx-build
+	bin/sphinx-build . $(BUILD_DIR)
 
 bin/sphinx-autobuild bin/sphinx-build: bin
 	pip3 install \
 		sphinx-reload sphinx-autobuild  \
 		sphinxcontrib_bibtex  sphinx_bootstrap_theme sphinx_rtd_theme  sphinx_book_theme  sphinx_subfigure \
 		"docxbuilder[math]"
-
-bin:
-	python -m venv .
 
 debs:
 	sudo apt install --yes python3-pip
