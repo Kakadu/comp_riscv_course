@@ -1,1 +1,13 @@
 _build
+*.bak
+# venv stuff
+/bin
+/lib
+/lib64
+/pyvenv.cfg
+.~lock.*.docx\#
+
+*.log
+*.pdf
+__pycache__
+

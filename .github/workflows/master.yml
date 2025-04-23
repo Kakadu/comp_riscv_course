@@ -10,20 +10,32 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - run: make debs
+      - run: |
+          sudo apt install fonts-cmu texlive-lang-cyrillic texlive-xetex texlive-science texlive-plain-generic poppler-utils --yes
+          make -C images
+
       #- run: sudo apt install python3-sphinx-rtd-theme python3-sphinx-autobuild --yes
-      - run: pip3 install docxbuilder --user
-      - run: make
+      - run: |
+          python3 -m venv .
+          source bin/activate
+          make debs
+      - run: |
+          source bin/activate
+          make all _build/comp_riscv.docx _build/Course_description.docx
+
+      - run: tree _build
 
       - name: Publish to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v3.9.3
         with:
-          personal_token: ${{ secrets.PERSONAL_TOKEN }} 
+          personal_token: ${{ secrets.PERSONAL_TOKEN }}
           # https://github.com/peaceiris/actions-gh-pages#%EF%B8%8F-set-personal-access-token-personal_token
           publish_dir: _build
-          external_repository: Kakadu/kakadu.github.io
-          publish_branch: master
-          destination_dir: riscv-course-2023
-          enable_jekyll: true
+          #external_repository: Kakadu/kakadu.github.io
+          #publish_branch: master
+          destination_dir: .
+          publish_branch: gh-pages
+          enable_jekyll: false
+
